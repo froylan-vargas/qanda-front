@@ -13,8 +13,10 @@ import {
   gotUnansweredQuestionsAction,
   AppState,
 } from './Store';
+import { useAuth } from './Auth';
 
 export const HomePage = () => {
+  const { isAuthenticated } = useAuth();
   const dispatch = useDispatch();
   const questions = useSelector(
     (state: AppState) => state.questions.unanswered,
@@ -24,12 +26,18 @@ export const HomePage = () => {
   );
 
   React.useEffect(() => {
+    let cancelled = false;
     const doGetUnansweredQuestions = async () => {
       dispatch(gettingUnansweredQuestionsAction());
       const unansweredQuestions = await getUnansweredQuestions();
-      dispatch(gotUnansweredQuestionsAction(unansweredQuestions));
+      if (!cancelled) {
+        dispatch(gotUnansweredQuestionsAction(unansweredQuestions));
+      }
     };
     doGetUnansweredQuestions();
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -48,9 +56,11 @@ export const HomePage = () => {
         `}
       >
         <PageTitle>Unanswered Questions</PageTitle>
-        <PrimaryButton onClick={handleAskQuestionClick}>
-          Ask a question
-        </PrimaryButton>
+        {isAuthenticated && (
+          <PrimaryButton onClick={handleAskQuestionClick}>
+            Ask a question
+          </PrimaryButton>
+        )}
       </div>
       {questionsLoading ? (
         <div>Loading...</div>
